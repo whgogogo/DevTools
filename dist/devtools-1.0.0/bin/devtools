@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+# devtools - 主入口脚本
+# 加载所有模块并展示交互式主菜单
+
+set -euo pipefail
+
+# 定位项目根目录
+DEVTOOLS_HOME="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+LIB_DIR="${DEVTOOLS_HOME}/lib"
+
+# 加载核心模块
+source "${LIB_DIR}/common.sh"
+source "${LIB_DIR}/i18n.sh"
+source "${LIB_DIR}/config.sh"
+
+# 加载功能模块
+source "${LIB_DIR}/search.sh"
+source "${LIB_DIR}/replace.sh"
+source "${LIB_DIR}/debug.sh"
+source "${LIB_DIR}/database.sh"
+source "${LIB_DIR}/log.sh"
+
+# ============================================================
+# 初始化
+# ============================================================
+
+init() {
+    # 加载配置
+    if ! config_load; then
+        print_red "$(msg 'failed'): 配置文件不存在"
+        print_yellow "请执行 install.sh 或手动创建 ~/.devtools/config"
+        exit 1
+    fi
+    # 初始化国际化
+    i18n_init "${LANG:-zh_CN}"
+}
+
+# ============================================================
+# 主菜单
+# ============================================================
+
+show_main_menu() {
+    echo ""
+    print_header "$(msg 'app_title')"
+    print_menu_item "1" "$(msg 'menu_search')"
+    print_menu_item "2" "$(msg 'menu_replace')"
+    print_menu_item "3" "$(msg 'menu_debug')"
+    print_menu_item "4" "$(msg 'menu_database')"
+    print_menu_item "5" "$(msg 'menu_log')"
+    print_menu_item "c" "$(msg 'menu_config')"
+    print_menu_item "h" "$(msg 'menu_help')"
+    print_menu_item "q" "$(msg 'menu_quit')"
+    print_footer
+}
+
+# ============================================================
+# 帮助信息
+# ============================================================
+
+show_help() {
+    echo ""
+    print_header "$(msg 'app_title') - $(msg 'menu_help')"
+    echo ""
+    print_green "$(msg 'help_search')"
+    print_green "$(msg 'help_replace')"
+    print_green "$(msg 'help_debug')"
+    print_green "$(msg 'help_database')"
+    print_green "$(msg 'help_log')"
+    print_green "$(msg 'help_config')"
+    print_footer
+    echo ""
+}
+
+# ============================================================
+# 配置管理子菜单
+# ============================================================
+
+show_config_menu() {
+    while true; do
+        echo ""
+        print_header "$(msg 'menu_config')"
+        print_menu_item "1" "$(msg 'config_view')"
+        print_menu_item "2" "$(msg 'config_lang')"
+        print_menu_item "3" "$(msg 'config_ssh')"
+        print_menu_item "4" "$(msg 'config_hc')"
+        print_menu_item "5" "$(msg 'config_db')"
+        print_menu_item "6" "$(msg 'config_log_path')"
+        print_menu_item "0" "$(msg 'menu_quit')"
+        print_footer
+        choice=$(read_input "$(msg 'select_prompt')")
+        case "$choice" in
+            1)
+                echo ""
+                print_cyan "=== $(msg 'config_view') ==="
+                cat "$CONFIG_FILE"
+                ;;
+            2)
+                echo ""
+                echo "zh_CN / en_US"
+                new_lang=$(read_input "$(msg 'config_lang')")
+                config_set "LANG" "$new_lang"
+                i18n_init "$new_lang"
+                print_green "$(msg 'success')"
+                ;;
+            3)
+                echo ""
+                new_user=$(read_input "SSH_USER_PAAS")
+                config_set "SSH_USER_PAAS" "$new_user"
+                new_pass=$(read_input "SSH_PASS_PAAS")
+                config_set "SSH_PASS_PAAS" "$new_pass"
+                new_user=$(read_input "SSH_USER_ROOT")
+                config_set "SSH_USER_ROOT" "$new_user"
+                new_pass=$(read_input "SSH_PASS_ROOT")
+                config_set "SSH_PASS_ROOT" "$new_pass"
+                export SSH_USER_PAAS="$new_user"
+                export SSH_PASS_PAAS="$new_pass"
+                export SSH_USER_ROOT="$new_user"
+                export SSH_PASS_ROOT="$new_pass"
+                print_green "$(msg 'success')"
+                ;;
+            4)
+                echo ""
+                print_yellow "当前值: ${HEALTH_CHECK_SCRIPTS:-}"
+                new_hc=$(read_input "$(msg 'config_hc')" "${HEALTH_CHECK_SCRIPTS:-}")
+                config_set "HEALTH_CHECK_SCRIPTS" "$new_hc"
+                export HEALTH_CHECK_SCRIPTS="$new_hc"
+                print_green "$(msg 'success')"
+                ;;
+            5)
+                print_yellow "请直接编辑配置文件中的数据库 section: $CONFIG_FILE"
+                ;;
+            6)
+                echo ""
+                new_path=$(read_input "$(msg 'config_log_path')" "${DAC_SPARK_LOG_PATH:-}")
+                config_set "DAC_SPARK_LOG_PATH" "$new_path"
+                export DAC_SPARK_LOG_PATH="$new_path"
+                print_green "$(msg 'success')"
+                ;;
+            0|q)
+                break
+                ;;
+        esac
+    done
+}
+
+# ============================================================
+# 主循环
+# ============================================================
+
+main() {
+    init
+    while true; do
+        show_main_menu
+        choice=$(read_input "$(msg 'select_prompt')")
+        case "$choice" in
+            1) do_search ;;
+            2) do_replace ;;
+            3) do_debug ;;
+            4) do_database ;;
+            5) do_log ;;
+            c|C) show_config_menu ;;
+            h|H) show_help ;;
+            q|Q) exit 0 ;;
+            *) print_red "无效选择，请重新输入" ;;
+        esac
+    done
+}
+
+main "$@"

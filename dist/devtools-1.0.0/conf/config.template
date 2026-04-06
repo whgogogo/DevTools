@@ -1,0 +1,61 @@
+# ============================================
+# DevTools 配置文件
+# ============================================
+
+# 语言设置: zh_CN | en_US
+LANG=zh_CN
+
+# --------------------------------------------
+# SSH凭据（各节点通用）
+# --------------------------------------------
+SSH_USER_PAAS=paas
+SSH_PASS_PAAS=your_paas_password
+SSH_USER_ROOT=root
+SSH_PASS_ROOT=your_root_password
+
+# --------------------------------------------
+# 健康检查脚本名称列表（逗号分隔）
+# 用于功能3开启Debug时禁用健康检查
+# --------------------------------------------
+HEALTH_CHECK_SCRIPTS=health_check.sh,healthcheck.sh,check_health.sh
+
+# --------------------------------------------
+# DAC Spark日志路径
+# --------------------------------------------
+DAC_SPARK_LOG_PATH=/var/log/dac/spark.log
+
+# --------------------------------------------
+# 数据库配置
+# KEYWORD: 用于搜索定位对应节点/容器的关键词
+# CONNECT_CMD: 跳转到对应节点后执行的连接命令
+#   单行命令: CONNECT_CMD=gsql -d mydb -p 5432
+#   多行命令: 使用 <<EOF ... EOF 包裹
+# --------------------------------------------
+
+[gaussv1]
+KEYWORD=gaussdb-v1
+CONNECT_CMD<<EOF
+source /home/paas/gauss_env.sh
+gsql -d mydb -p 5432 -U myuser
+EOF
+
+[gaussv3]
+KEYWORD=gaussdb-v3
+CONNECT_CMD<<EOF
+source /home/paas/gauss_env.sh
+gsql -d mydb -p 5432 -U myuser
+EOF
+
+[carbon]
+KEYWORD=carbon
+CONNECT_CMD<<EOF
+export JAVA_HOME=/opt/java
+beeline -u "jdbc:hive2://localhost:10000/mydb"
+EOF
+
+[hudi]
+KEYWORD=hudi
+CONNECT_CMD<<EOF
+cd /opt/hudi
+./connect.sh
+EOF
