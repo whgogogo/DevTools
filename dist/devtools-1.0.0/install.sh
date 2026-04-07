@@ -25,7 +25,10 @@ fi
 # 检查依赖
 for cmd in sshpass ssh scp; do
     if ! command -v "$cmd" &>/dev/null; then
-        echo "错误: 缺少依赖 $cmd，请先安装"
+        case "$cmd" in
+            sshpass) echo "错误: 缺少依赖 $cmd，请执行: sudo yum install -y sshpass" ;;
+            *)       echo "错误: 缺少依赖 $cmd，请先安装" ;;
+        esac
         exit 1
     fi
 done
