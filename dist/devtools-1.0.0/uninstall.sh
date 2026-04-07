@@ -12,11 +12,13 @@ echo "  DevTools 卸载"
 echo "=========================================="
 echo ""
 
+KUBECTL_CMD="${KUBECTL_CMD:-$(command -v kubectl 2>/dev/null || echo '/opt/kubectl')}"
+
 echo "正在获取集群节点列表..."
 node_ips=()
 while IFS= read -r ip; do
     [[ -n "$ip" ]] && node_ips+=("$ip")
-done < <(kubectl get nodes -o custom-columns=IP:.status.addresses[0].address --no-headers 2>/dev/null)
+done < <("$KUBECTL_CMD" get nodes -o custom-columns=IP:.status.addresses[0].address --no-headers 2>/dev/null)
 
 if [[ ${#node_ips[@]} -eq 0 ]]; then
     echo "警告: 无法获取节点列表"
