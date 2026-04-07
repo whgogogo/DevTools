@@ -30,9 +30,14 @@ echo ""
 
 for ip in "${node_ips[@]}"; do
     echo "  -> 卸载 $ip ..."
-    sshpass -p "$root_pass" ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        "root@${ip}" "rm -rf ${INSTALL_DIR} && rm -f /usr/local/bin/devtools" 2>/dev/null
+    expect -c "
+        set timeout 30
+        spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${ip} \"rm -rf ${INSTALL_DIR} && rm -f /usr/local/bin/devtools\"
+        expect {
+            \"*assword*\" { send \"${root_pass}\r\"; exp_continue }
+            eof
+        }
+    " 2>/dev/null
     echo "  $ip 卸载完成"
 done
 

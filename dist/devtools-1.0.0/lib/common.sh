@@ -68,46 +68,65 @@ read_confirm() {
 }
 
 # ============================================================
-# SSH 封装
+# SSH 封装（使用 expect 自动输入密码）
 # ============================================================
 
-# 通过 SSH 在远程节点执行命令（使用 sshpass 自动登录）
+# expect 自动 SSH 执行远程命令
 # 用法: ssh_exec <user> <host> <password> <command...>
 ssh_exec() {
     local user="$1" host="$2" password="$3"
     shift 3
-    sshpass -p "$password" ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -o ConnectTimeout=10 \
-        "${user}@${host}" "$@"
+    expect -c "
+        set timeout 30
+        spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${user}@${host} $@
+        expect {
+            \"*assword*\" { send \"${password}\r\"; exp_continue }
+            eof
+        }
+    " 2>/dev/null
 }
 
-# 通过 SSH 交互式登录到远程节点
+# expect 自动 SSH 交互式登录
 # 用法: ssh_login <user> <host> <password>
 ssh_login() {
     local user="$1" host="$2" password="$3"
-    sshpass -p "$password" ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        "${user}@${host}"
+    shift 3
+    expect -c "
+        set timeout -1
+        spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${user}@${host} $@
+        expect {
+            \"*assword*\" { send \"${password}\r\"; interact }
+        }
+    "
 }
 
-# SCP 传输文件（使用 paas 用户）
+# expect 自动 SCP 传输文件
 # 用法: scp_transfer <user> <password> <src_file> <host>:<dst_path>
 scp_transfer() {
     local user="$1" password="$2" src="$3" dst="$4"
-    sshpass -p "$password" scp -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        "$src" "${user}@${dst}"
+    expect -c "
+        set timeout 60
+        spawn scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${src} ${user}@${dst}
+        expect {
+            \"*assword*\" { send \"${password}\r\"; exp_continue }
+            eof
+        }
+    " 2>/dev/null
 }
 
-# 通过 SSH 建立 SSH 端口转发
+# expect 自动 SSH 端口转发（后台运行）
 # 用法: ssh_port_forward <user> <host> <password> <local_port> <remote_port>
 ssh_port_forward() {
     local user="$1" host="$2" password="$3" local_port="$4" remote_port="$5"
-    sshpass -p "$password" ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -N -L "${local_port}:localhost:${remote_port}" \
-        -f "${user}@${host}"
+    expect -c "
+        set timeout -1
+        spawn ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            -N -L ${local_port}:localhost:${remote_port} -f ${user}@${host}
+        expect {
+            \"*assword*\" { send \"${password}\r\"; exp_continue }
+            eof
+        }
+    " 2>/dev/null
     echo $!
 }
 
