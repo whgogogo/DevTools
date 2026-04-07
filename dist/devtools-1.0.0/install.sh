@@ -77,6 +77,8 @@ done <<< "$node_lines"
 echo "发现 ${#node_ips[@]} 个节点: ${node_ips[*]}"
 echo ""
 
+read -rp "请输入 paas 用户密码: " -s paas_pass
+echo ""
 read -rp "请输入 root 用户密码: " -s root_pass
 echo ""
 
@@ -110,6 +112,7 @@ echo "正在生成配置文件..."
 mkdir -p "$CONFIG_DIR"
 if [[ ! -f "$CONFIG_FILE" ]]; then
     cp "${SCRIPT_DIR}/conf/config.template" "$CONFIG_FILE"
+    sed -i.bak "s/SSH_PASS_PAAS=your_paas_password/SSH_PASS_PAAS=${paas_pass}/" "$CONFIG_FILE"
     sed -i.bak "s/SSH_PASS_ROOT=your_root_password/SSH_PASS_ROOT=${root_pass}/" "$CONFIG_FILE"
     rm -f "${CONFIG_FILE}.bak"
     chmod 600 "$CONFIG_FILE"
