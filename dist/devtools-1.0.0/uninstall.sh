@@ -12,7 +12,8 @@ echo "  DevTools 卸载"
 echo "=========================================="
 echo ""
 
-KUBECTL_CMD="${KUBECTL_CMD:-$(command -v kubectl 2>/dev/null || echo '/opt/kubectl')} --insecure-skip-tls-verify"
+KUBECTL_BIN="${KUBECTL_BIN:-$(command -v kubectl 2>/dev/null || echo '/opt/kubectl')}"
+KUBECTL_CMD="$KUBECTL_BIN --insecure-skip-tls-verify"
 
 echo "正在获取集群节点列表..."
 node_ips=()

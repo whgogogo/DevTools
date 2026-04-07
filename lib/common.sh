@@ -135,7 +135,8 @@ ssh_port_forward() {
 # ============================================================
 
 # kubectl 命令路径（支持环境变量覆盖，默认 /opt/kubectl）
-KUBECTL_CMD="${KUBECTL_CMD:-$(command -v kubectl 2>/dev/null || echo '/opt/kubectl')} --insecure-skip-tls-verify"
+KUBECTL_BIN="${KUBECTL_BIN:-$(command -v kubectl 2>/dev/null || echo '/opt/kubectl')}"
+KUBECTL_CMD="$KUBECTL_BIN --insecure-skip-tls-verify"
 
 # 获取所有节点信息
 # 输出格式: "节点名|节点IP|节点状态" 每行一条
