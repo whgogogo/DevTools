@@ -16,7 +16,7 @@ echo "=========================================="
 echo ""
 
 # kubectl 路径（跳板机上可能不在默认 PATH 中）
-KUBECTL_CMD="${KUBECTL_CMD:-$(command -v kubectl 2>/dev/null || echo '/opt/kubectl')}"
+KUBECTL_CMD="${KUBECTL_CMD:-$(command -v kubectl 2>/dev/null || echo '/opt/kubectl')} --insecure-skip-tls-verify"
 if [[ ! -x "$KUBECTL_CMD" ]]; then
     echo "错误: 找不到 kubectl，请设置 KUBECTL_CMD 环境变量"
     exit 1
