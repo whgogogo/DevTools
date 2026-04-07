@@ -115,17 +115,20 @@ ssh_port_forward() {
 # kubectl 封装
 # ============================================================
 
+# kubectl 命令路径（支持环境变量覆盖，默认 /opt/kubectl）
+KUBECTL_CMD="${KUBECTL_CMD:-$(command -v kubectl 2>/dev/null || echo '/opt/kubectl')}"
+
 # 获取所有节点信息
 # 输出格式: "节点名|节点IP|节点状态" 每行一条
 kubectl_get_nodes() {
-    kubectl get nodes -o custom-columns=NAME:.metadata.name,IP:.status.addresses[0].address,STATUS:.status.conditions[-1].type --no-headers 2>/dev/null \
+    "$KUBECTL_CMD" get nodes -o custom-columns=NAME:.metadata.name,IP:.status.addresses[0].address,STATUS:.status.conditions[-1].type --no-headers 2>/dev/null \
         | awk '{print $1"|"$2"|"$3}'
 }
 
 # 获取所有 Pod 信息
 # 输出格式: "命名空间|Pod名|节点名|容器状态" 每行一条
 kubectl_get_pods() {
-    kubectl get pods -A -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,NODE:.spec.nodeName,STATUS:.status.phase --no-headers 2>/dev/null \
+    "$KUBECTL_CMD" get pods -A -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name,NODE:.spec.nodeName,STATUS:.status.phase --no-headers 2>/dev/null \
         | awk '{print $1"|"$2"|"$3"|"$4}'
 }
 
@@ -133,7 +136,7 @@ kubectl_get_pods() {
 # 用法: kubectl_get_containers <pod_name> <namespace>
 kubectl_get_containers() {
     local pod="$1" ns="${2:-default}"
-    kubectl get pod "$pod" -n "$ns" -o jsonpath='{range .spec.containers[*]}{.name}{"\n"}{end}' 2>/dev/null
+    "$KUBECTL_CMD" get pod "$pod" -n "$ns" -o jsonpath='{range .spec.containers[*]}{.name}{"\n"}{end}' 2>/dev/null
 }
 
 # ============================================================

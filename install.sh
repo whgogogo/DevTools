@@ -15,8 +15,15 @@ echo "  DevTools 一键安装"
 echo "=========================================="
 echo ""
 
+# kubectl 路径（跳板机上可能不在默认 PATH 中）
+KUBECTL_CMD="${KUBECTL_CMD:-$(command -v kubectl 2>/dev/null || echo '/opt/kubectl')}"
+if [[ ! -x "$KUBECTL_CMD" ]]; then
+    echo "错误: 找不到 kubectl，请设置 KUBECTL_CMD 环境变量"
+    exit 1
+fi
+
 # 检查依赖
-for cmd in kubectl sshpass ssh scp; do
+for cmd in sshpass ssh scp; do
     if ! command -v "$cmd" &>/dev/null; then
         echo "错误: 缺少依赖 $cmd，请先安装"
         exit 1
@@ -29,7 +36,7 @@ echo "系统架构: $arch"
 
 # 获取集群节点列表
 echo "正在获取集群节点列表..."
-node_lines=$(kubectl get nodes -o custom-columns=NAME:.metadata.name,IP:.status.addresses[0].address --no-headers 2>/dev/null)
+node_lines=$("$KUBECTL_CMD" get nodes -o custom-columns=NAME:.metadata.name,IP:.status.addresses[0].address --no-headers 2>/dev/null)
 if [[ -z "$node_lines" ]]; then
     echo "错误: 无法获取节点列表，请检查 kubectl 配置"
     exit 1
