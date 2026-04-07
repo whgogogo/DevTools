@@ -62,9 +62,18 @@ echo "系统架构: $arch"
 
 # 获取集群节点列表
 echo "正在获取集群节点列表..."
-node_lines=$("$KUBECTL_CMD" get nodes -o custom-columns=NAME:.metadata.name,IP:.status.addresses[0].address --no-headers 2>/dev/null)
-if [[ -z "$node_lines" ]]; then
-    echo "错误: 无法获取节点列表，请检查 kubectl 配置"
+node_lines=$("$KUBECTL_CMD" get nodes -o custom-columns=NAME:.metadata.name,IP:.status.addresses[0].address --no-headers 2>&1) || {
+    echo "错误: kubectl 执行失败，详细信息:"
+    echo "$node_lines"
+    exit 1
+}
+if [[ -z "$node_lines" || "$node_lines" == *"error"* || "$node_lines" == *"Error"* ]]; then
+    echo "错误: 无法获取节点列表"
+    [[ -n "$node_lines" ]] && echo "  输出: $node_lines"
+    echo "  请检查:"
+    echo "  1. kubectl 是否可用: $KUBECTL_CMD"
+    echo "  2. kubeconfig 是否已配置: ls -la ~/.kube/config"
+    echo "  3. 集群是否可访问: $KUBECTL_CMD cluster-info"
     exit 1
 fi
 
